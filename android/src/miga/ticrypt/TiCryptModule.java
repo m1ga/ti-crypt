@@ -15,6 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 
 @Kroll.module(name = "Ticrypt", id = "miga.ticrypt")
 public class TiCryptModule extends KrollModule {
@@ -32,6 +33,7 @@ public class TiCryptModule extends KrollModule {
         KrollDict arg = new KrollDict();
 
         try {
+            SecureRandom secureRandom = new SecureRandom();
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(1024);
             KeyPair kp = kpg.genKeyPair();

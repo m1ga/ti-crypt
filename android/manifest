@@ -2,8 +2,8 @@
 # this is your module manifest and used by Titanium
 # during compilation, packaging, distribution, etc.
 #
-version: 1.0
-apiversion: 2
+version: 2.0
+apiversion: 3
 description: Asymmetric Encryption with RSA (private/public key)
 author: Michael Gangolf
 license: Apache License, Version 2.0
@@ -15,5 +15,5 @@ name: ticrypt
 moduleid: miga.ticrypt
 guid: 1d15a606-10d8-4268-b98c-c8be463e2d7e
 platform: android
-minsdk: 4.1.0.GA
-architectures: armeabi armeabi-v7a x86
+minsdk: 6.0.0.GA
+architectures: armeabi-v7a x86
