@@ -4,16 +4,14 @@ import miga.ticrypt.TiCryptModule;
 import org.appcelerator.kroll.KrollProxy;
 import org.appcelerator.kroll.annotations.Kroll;
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidKeyException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Kroll.proxy(creatableInModule=TiCryptModule.class)
 public class CryptoAESProxy extends KrollProxy{
-
-    private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private final static String HEX = "0123456789ABCDEF";
-    private int size = 32;
 
     public CryptoAESProxy(){
         super();
@@ -21,24 +19,29 @@ public class CryptoAESProxy extends KrollProxy{
 
     @Kroll.method
     public String generateKey() {
-    
-        StringBuilder builder = new StringBuilder();
-        while (size-- != 0) {
-            int character = (int)(Math.random()*ALPHA_NUMERIC_STRING.length());
-            builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+
+        String key;
+        try {
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            SecureRandom secureRandom = new SecureRandom();
+            keyGen.init(secureRandom);
+            SecretKey secretKey = keyGen.generateKey();
+            key = Base64.getEncoder().encodeToString(secretKey.getEncoded());
+        }catch (Exception ex){
+            key = ex.getMessage();
         }
-        return builder.toString();
+        return key;
     }
 
     @Kroll.method
     public String crypt(String key, String value){
         String cryptedData;
-        SecretKey skeySpec = new SecretKeySpec(key.getBytes(), "AES");
         try {
+            SecretKey skeySpec = new SecretKeySpec(key.getBytes(), "AES");
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-            byte[] encrypted = cipher.doFinal(value.getBytes());
-            cryptedData = toHex(encrypted);
+            byte[] encrypted = cipher.doFinal(value.getBytes("UTF-8"));
+            cryptedData = Base64.getEncoder().encodeToString(encrypted);
         }catch (Exception ex){
             cryptedData = ex.getMessage();
         }
@@ -48,27 +51,17 @@ public class CryptoAESProxy extends KrollProxy{
     @Kroll.method
     public String decrypt(String key, String encrypted) {
         String cryptedData;
-        SecretKey skeySpec = new SecretKeySpec(key.getBytes(), "AES");
         try {
+            SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes(), "AES");
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-            byte[] decrypted = cipher.doFinal(encrypted.getBytes());
-            cryptedData = new String(decrypted);
+            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(encrypted.getBytes()));
+            cryptedData = new String(decrypted, "UTF-8");
+
         }catch (Exception ex){
             cryptedData = ex.getMessage();
         }
 
         return cryptedData;
     }
-
-    private static String toHex(byte[] buf) {
-        if (buf == null)
-            return "";
-        StringBuilder result = new StringBuilder(2 * buf.length);
-        for (byte aBuf : buf) {
-            result.append(HEX.charAt((aBuf >> 4) & 0x0f)).append(HEX.charAt(aBuf & 0x0f));
-        }
-        return result.toString();
-    }
-
 }
