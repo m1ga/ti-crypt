@@ -15,7 +15,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
 
 @Kroll.module(name = "Ticrypt", id = "miga.ticrypt")
 public class TiCryptModule extends KrollModule {
@@ -33,7 +32,7 @@ public class TiCryptModule extends KrollModule {
         KrollDict arg = new KrollDict();
 
         try {
-            SecureRandom secureRandom = new SecureRandom();
+            //SecureRandom secureRandom = new SecureRandom();
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(1024);
             KeyPair kp = kpg.genKeyPair();
@@ -62,7 +61,7 @@ public class TiCryptModule extends KrollModule {
         try {
             byte[]encodedKey = Base64.decode(keyString, 0);
             PKCS8EncodedKeySpec x509KeySpec = new PKCS8EncodedKeySpec(encodedKey);
-            KeyFactory keyFact = KeyFactory.getInstance("RSA", "BC");
+            KeyFactory keyFact = KeyFactory.getInstance("RSA");//fix:https://android-developers.googleblog.com/2018/03/cryptography-changes-in-android-p.html
             key = keyFact.generatePrivate(x509KeySpec);
         } catch (Exception e) {
             return "error key";
@@ -93,7 +92,7 @@ public class TiCryptModule extends KrollModule {
         try {
             byte[]encodedKey = Base64.decode(keyString, 0);
             X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(encodedKey);
-            KeyFactory keyFact = KeyFactory.getInstance("RSA", "BC");
+            KeyFactory keyFact = KeyFactory.getInstance("RSA");//fix:https://android-developers.googleblog.com/2018/03/cryptography-changes-in-android-p.html
             key = keyFact.generatePublic(x509KeySpec);
         } catch (Exception e) {
             return "error key";
