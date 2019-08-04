@@ -42,3 +42,6 @@ console.log("AES Encode: " + txt);
 let txt_decode =  aesCrypto.decrypt(txt, aesKey);
 console.log("AES Decode: " + txt_decode);
 ```
+
+## Contributions:
+* blacktiago (https://github.com/blacktiago)
