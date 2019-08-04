@@ -16,4 +16,4 @@ name: ticrypt
 moduleid: miga.ticrypt
 guid: 1d15a606-10d8-4268-b98c-c8be463e2d7e
 platform: android
-minsdk: 7.5.2.GA
+minsdk: 7.0.0
