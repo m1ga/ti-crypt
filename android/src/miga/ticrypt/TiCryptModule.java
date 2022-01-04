@@ -1,118 +1,144 @@
 package miga.ticrypt;
 
 import android.util.Base64;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.HashMap;
-import javax.crypto.Cipher;
+
 import org.appcelerator.kroll.KrollDict;
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.HashMap;
+
+import javax.crypto.Cipher;
+
 @Kroll.module(name = "Ticrypt", id = "miga.ticrypt")
-public class TiCryptModule extends KrollModule
-{
-	static final String TAG = "TiCrypt";
-	Key publicKey = null;
-	Key privateKey = null;
+public class TiCryptModule extends KrollModule {
+    static final String TAG = "TiCrypt";
+    Key publicKey = null;
+    Key privateKey = null;
 
-	public TiCryptModule()
-	{
-		super();
-	}
+    public TiCryptModule() {
+        super();
+    }
 
-	@Kroll.method
-	public KrollDict generateKeyPair()
-	{
-		// generate key pair
-		//
-		KrollDict arg = new KrollDict();
+    @Kroll.method
+    public KrollDict generateKeyPair() {
+        // generate key pair
+        //
+        KrollDict arg = new KrollDict();
 
-		try {
-			//SecureRandom secureRandom = new SecureRandom();
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-			kpg.initialize(1024);
-			KeyPair kp = kpg.genKeyPair();
-			publicKey = kp.getPublic();
-			privateKey = kp.getPrivate();
+        try {
+            //SecureRandom secureRandom = new SecureRandom();
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(1024);
+            KeyPair kp = kpg.genKeyPair();
+            publicKey = kp.getPublic();
+            privateKey = kp.getPrivate();
 
-			arg.put("privateKey", Base64.encodeToString(privateKey.getEncoded(), Base64.NO_WRAP));
-			arg.put("publicKey", Base64.encodeToString(publicKey.getEncoded(), Base64.NO_WRAP));
+            arg.put("privateKey", Base64.encodeToString(privateKey.getEncoded(), Base64.NO_WRAP));
+            arg.put("publicKey", Base64.encodeToString(publicKey.getEncoded(), Base64.NO_WRAP));
 
-		} catch (Exception e) {
-			Log.e(TAG, "RSA key pair error");
-		}
+        } catch (Exception e) {
+            Log.e(TAG, "RSA key pair error");
+        }
 
-		return arg;
-	}
+        return arg;
+    }
 
-	@Kroll.method
-	public String decode(HashMap args)
-	{
-		// decode string back to plain text
-		//
-		KrollDict arg = new KrollDict(args);
-		String txt = arg.getString("cipherText");
-		byte[] bytesEncoded = Base64.decode(txt, 0);
-		String keyString = arg.getString("privateKey");
-		PrivateKey key;
+    @Kroll.method
+    public String decode(HashMap args) {
+        // decode string back to plain text
+        //
+        KrollDict arg = new KrollDict(args);
+        String txt = arg.getString("cipherText");
+        byte[] bytesEncoded = Base64.decode(txt, 0);
+        String keyString = arg.getString("privateKey");
+        PrivateKey key;
 
-		try {
-			byte[] encodedKey = Base64.decode(keyString, 0);
-			PKCS8EncodedKeySpec x509KeySpec = new PKCS8EncodedKeySpec(encodedKey);
-			KeyFactory keyFact = KeyFactory.getInstance("RSA");
-			key = keyFact.generatePrivate(x509KeySpec);
-		} catch (Exception e) {
-			return "error key";
-		}
+        try {
+            byte[] encodedKey = Base64.decode(keyString, 0);
+            PKCS8EncodedKeySpec x509KeySpec = new PKCS8EncodedKeySpec(encodedKey);
+            KeyFactory keyFact = KeyFactory.getInstance("RSA");
+            key = keyFact.generatePrivate(x509KeySpec);
+        } catch (Exception e) {
+            return "error key";
+        }
 
-		byte[] decodedBytes = null;
+        byte[] decodedBytes = null;
 
-		try {
-			Cipher c = Cipher.getInstance("RSA");
-			c.init(Cipher.DECRYPT_MODE, key);
-			decodedBytes = c.doFinal(bytesEncoded);
-		} catch (Exception e) {
-			Log.e(TAG, "RSA decryption error " + e.toString());
-			return "error";
-		}
-		return new String(decodedBytes);
-	}
+        try {
+            Cipher c = Cipher.getInstance("RSA");
+            c.init(Cipher.DECRYPT_MODE, key);
+            decodedBytes = c.doFinal(bytesEncoded);
+        } catch (Exception e) {
+            Log.e(TAG, "RSA decryption error " + e.toString());
+            return "error";
+        }
+        return new String(decodedBytes);
+    }
 
-	@Kroll.method
-	public String encode(HashMap args)
-	{
-		// encode text to cipher text
-		//
-		KrollDict arg = new KrollDict(args);
-		String txt = arg.getString("plainText");
-		String keyString = arg.getString("publicKey");
-		byte[] encodedBytes = null;
-		Key key;
+    @Kroll.method
+    public String encode(HashMap args) {
+        // encode text to cipher text
+        //
+        KrollDict arg = new KrollDict(args);
+        String txt = arg.getString("plainText");
+        String keyString = arg.getString("publicKey");
+        byte[] encodedBytes = null;
+        Key key;
 
-		try {
-			byte[] encodedKey = Base64.decode(keyString, 0);
-			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(encodedKey);
-			KeyFactory keyFact = KeyFactory.getInstance("RSA");
-			key = keyFact.generatePublic(x509KeySpec);
-		} catch (Exception e) {
-			return "error key";
-		}
+        try {
+            byte[] encodedKey = Base64.decode(keyString, 0);
+            X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(encodedKey);
+            KeyFactory keyFact = KeyFactory.getInstance("RSA");
+            key = keyFact.generatePublic(x509KeySpec);
+        } catch (Exception e) {
+            return "error key";
+        }
 
-		try {
-			Cipher c = Cipher.getInstance("RSA");
-			c.init(Cipher.ENCRYPT_MODE, key);
-			encodedBytes = c.doFinal(txt.getBytes());
-		} catch (Exception e) {
-			Log.e(TAG, "RSA encryption error " + e.toString());
-		}
+        try {
+            Cipher c = Cipher.getInstance("RSA");
+            c.init(Cipher.ENCRYPT_MODE, key);
+            encodedBytes = c.doFinal(txt.getBytes());
+        } catch (Exception e) {
+            Log.e(TAG, "RSA encryption error " + e.toString());
+        }
 
-		return Base64.encodeToString(encodedBytes, Base64.NO_WRAP);
-	}
+        return Base64.encodeToString(encodedBytes, Base64.NO_WRAP);
+    }
+
+    @Kroll.method
+    public String signText(HashMap args) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidKeySpecException {
+
+        KrollDict arg = new KrollDict(args);
+        String txt = arg.getString("text");
+        String priv = arg.getString("privateKey");
+
+        if (priv != "") {
+            byte[] pkcs8EncodedBytes = Base64.decode(priv, Base64.DEFAULT);
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pkcs8EncodedBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            privateKey = kf.generatePrivate(keySpec);
+        }
+
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign((PrivateKey) privateKey);
+
+        byte[] messageBytes = txt.getBytes();
+        signature.update(messageBytes);
+        byte[] digitalSignature = signature.sign();
+        return Base64.encodeToString(digitalSignature, Base64.NO_WRAP);
+    }
 }
